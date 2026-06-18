@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kirana Shop — Billing System</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- jsPDF for PDF download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ===== TOP NAV ===== -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <span class="shop-logo">🛒</span>
+      <div>
+        <h1 class="shop-name" id="shopNameDisplay">Sri Lakshmi Kirana Store</h1>
+        <p class="shop-tagline">Fresh · Fast · Trusted</p>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="datetime-box">
+        <span id="liveDate"></span>
+        <span id="liveTime" class="time-highlight"></span>
+      </div>
+      <button class="icon-btn" id="darkToggle" title="Toggle dark mode" aria-label="Toggle dark mode">
+        <span id="darkIcon">🌙</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== TABS ===== -->
+  <nav class="tab-nav" role="tablist">
+    <button class="tab-btn active" data-tab="dashboard" role="tab">📊 Dashboard</button>
+    <button class="tab-btn" data-tab="products" role="tab">📦 Products</button>
+    <button class="tab-btn" data-tab="billing" role="tab">🧾 Billing</button>
+  </nav>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main-content">
+
+    <!-- ========== DASHBOARD TAB ========== -->
+    <section id="tab-dashboard" class="tab-section active">
+      <div class="section-header">
+        <h2>Good morning! 👋</h2>
+        <p class="muted">Here's your store overview for today.</p>
+      </div>
+
+      <!-- Stats cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <span class="stat-icon">📦</span>
+          <div>
+            <p class="stat-label">Total Products</p>
+            <p class="stat-value" id="statProducts">0</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">🧾</span>
+          <div>
+            <p class="stat-label">Bills Today</p>
+            <p class="stat-value" id="statBills">0</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">💰</span>
+          <div>
+            <p class="stat-label">Revenue Today</p>
+            <p class="stat-value" id="statRevenue">₹0</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-icon">🏷️</span>
+          <div>
+            <p class="stat-label">Last Bill No.</p>
+            <p class="stat-value" id="statLastBill">—</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="section-header mt-2">
+        <h3>Quick Actions</h3>
+      </div>
+      <div class="quick-actions">
+        <button class="quick-btn" onclick="switchTab('products')">➕ Add Product</button>
+        <button class="quick-btn primary" onclick="switchTab('billing')">🧾 New Bill</button>
+        <button class="quick-btn" onclick="switchTab('products')">✏️ Edit Prices</button>
+      </div>
+
+      <!-- Recent products preview -->
+      <div class="section-header mt-2">
+        <h3>Products in Stock</h3>
+        <span class="badge" id="dashProductCount">0 items</span>
+      </div>
+      <div class="product-preview-grid" id="dashProductGrid">
+        <p class="empty-msg">No products yet. Add some from the Products tab.</p>
+      </div>
+    </section>
+
+    <!-- ========== PRODUCTS TAB ========== -->
+    <section id="tab-products" class="tab-section">
+      <div class="section-header">
+        <h2>Product Management</h2>
+        <span class="badge" id="productCount">0 products</span>
+      </div>
+
+      <!-- Add / Edit form -->
+      <div class="card form-card">
+        <h3 id="formTitle">Add New Product</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="productName">Product Name *</label>
+            <input type="text" id="productName" placeholder="e.g. Basmati Rice" autocomplete="off" />
+          </div>
+          <div class="form-group">
+            <label for="productPrice">Price per Unit (₹) *</label>
+            <input type="number" id="productPrice" placeholder="e.g. 60" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label for="productUnit">Unit Type *</label>
+            <select id="productUnit">
+              <option value="kg">kg</option>
+              <option value="g">g</option>
+              <option value="litre">litre</option>
+              <option value="ml">ml</option>
+              <option value="packet">packet</option>
+              <option value="piece">piece</option>
+              <option value="dozen">dozen</option>
+              <option value="box">box</option>
+              <option value="bottle">bottle</option>
+              <option value="bundle">bundle</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="productCategory">Category</label>
+            <select id="productCategory">
+              <option value="Grains & Dal">Grains & Dal</option>
+              <option value="Oil & Ghee">Oil & Ghee</option>
+              <option value="Spices & Masala">Spices & Masala</option>
+              <option value="Dairy">Dairy</option>
+              <option value="Snacks & Biscuits">Snacks & Biscuits</option>
+              <option value="Personal Care">Personal Care</option>
+              <option value="Beverages">Beverages</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="saveProductBtn" onclick="saveProduct()">💾 Save Product</button>
+          <button class="btn btn-ghost" id="cancelEditBtn" style="display:none" onclick="cancelEdit()">✖ Cancel</button>
+        </div>
+      </div>
+
+      <!-- Search bar -->
+      <div class="search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="productSearch" placeholder="Search products…" oninput="renderProductTable()" />
+      </div>
+
+      <!-- Products table -->
+      <div class="table-wrapper">
+        <table class="data-table" id="productTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Product Name</th>
+              <th>Price</th>
+              <th>Unit</th>
+              <th>Category</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="productTableBody">
+            <tr><td colspan="6" class="empty-msg">No products added yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========== BILLING TAB ========== -->
+    <section id="tab-billing" class="tab-section">
+      <div class="section-header">
+        <h2>New Bill</h2>
+        <span class="bill-no-badge" id="billNoBadge">Bill #—</span>
+      </div>
+
+      <!-- Customer info -->
+      <div class="card">
+        <div class="form-grid form-grid-2">
+          <div class="form-group">
+            <label for="customerName">Customer Name (optional)</label>
+            <input type="text" id="customerName" placeholder="e.g. Ramesh Kumar" />
+          </div>
+          <div class="form-group">
+            <label for="customerPhone">Phone (optional)</label>
+            <input type="tel" id="customerPhone" placeholder="e.g. 9876543210" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Add item row -->
+      <div class="card">
+        <h3>Add Item</h3>
+        <div class="form-grid form-grid-3">
+          <div class="form-group" style="flex:2">
+            <label for="billProductSelect">Select Product</label>
+            <div class="combo-wrapper">
+              <input type="text" id="billProductSearch" placeholder="Search or type product…" autocomplete="off" oninput="filterBillDropdown()" onfocus="showDropdown()" />
+              <div class="dropdown-list" id="billDropdown"></div>
+            </div>
+            <!-- hidden to store selection -->
+            <input type="hidden" id="billProductSelect" />
+          </div>
+          <div class="form-group">
+            <label for="billQty">Quantity</label>
+            <input type="number" id="billQty" placeholder="0" min="0.1" step="0.1" value="1" />
+          </div>
+          <div class="form-group">
+            <label>Unit Price</label>
+            <input type="text" id="billUnitPrice" placeholder="—" readonly class="readonly-field" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="addItemToBill()">➕ Add to Bill</button>
+        </div>
+      </div>
+
+      <!-- Bill items table -->
+      <div class="card" id="billTableCard" style="display:none">
+        <h3>Bill Items</h3>
+        <div class="table-wrapper">
+          <table class="data-table" id="billTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Product</th>
+                <th>Qty</th>
+                <th>Unit</th>
+                <th>Price/Unit</th>
+                <th>Subtotal</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="billTableBody"></tbody>
+          </table>
+        </div>
+
+        <!-- Totals -->
+        <div class="totals-section">
+          <div class="totals-row">
+            <span>Subtotal</span>
+            <span id="totalSubtotal">₹0.00</span>
+          </div>
+          <div class="totals-row discount-row">
+            <span>Discount</span>
+            <div class="discount-input-wrap">
+              <input type="number" id="discountAmount" placeholder="0" min="0" step="0.5" value="0" oninput="recalcTotal()" />
+              <span>₹</span>
+            </div>
+          </div>
+          <div class="totals-row grand-total-row">
+            <span>Grand Total</span>
+            <span id="grandTotal" class="grand-total-val">₹0.00</span>
+          </div>
+        </div>
+
+        <!-- Bill actions -->
+        <div class="bill-actions">
+          <button class="btn btn-ghost" onclick="clearBill()">🗑 Clear Bill</button>
+          <button class="btn btn-secondary" onclick="printBill()">🖨 Print Bill</button>
+          <button class="btn btn-primary" onclick="downloadBillPDF()">⬇ Download PDF</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== CONFIRM DIALOG (custom modal) ===== -->
+  <div class="modal-overlay" id="confirmModal" style="display:none">
+    <div class="modal-box">
+      <p class="modal-msg" id="confirmMsg">Are you sure?</p>
+      <div class="modal-actions">
+        <button class="btn btn-danger" id="confirmYes">Yes, Delete</button>
+        <button class="btn btn-ghost" onclick="closeConfirm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST NOTIFICATION ===== -->
+  <div class="toast" id="toast"></div>
+
+  <!-- ===== PRINTABLE BILL (hidden, revealed on print) ===== -->
+  <div id="printBillArea" style="display:none"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
