@@ -19,26 +19,6 @@ let editingId  = null; // id of product being edited, or null
 let pendingDeleteId = null;
 
 /* =============================================
-   DEFAULT PRODUCTS (loaded once on first run)
-   ============================================= */
-
-const DEFAULT_PRODUCTS = [
-  { name: 'Basmati Rice',    price: 60,  unit: 'kg',     category: 'Grains & Dal' },
-  { name: 'Sugar',           price: 45,  unit: 'kg',     category: 'Grains & Dal' },
-  { name: 'Wheat Flour (Atta)', price: 40, unit: 'kg',   category: 'Grains & Dal' },
-  { name: 'Toor Dal',        price: 130, unit: 'kg',     category: 'Grains & Dal' },
-  { name: 'Sunflower Oil',   price: 150, unit: 'litre',  category: 'Oil & Ghee' },
-  { name: 'Salt',            price: 20,  unit: 'kg',     category: 'Spices & Masala' },
-  { name: 'Red Chilli Powder', price: 180, unit: 'kg',   category: 'Spices & Masala' },
-  { name: 'Turmeric Powder', price: 140, unit: 'kg',     category: 'Spices & Masala' },
-  { name: 'Milk',            price: 22,  unit: 'packet', category: 'Dairy' },
-  { name: 'Biscuits (Parle G)', price: 10, unit: 'packet', category: 'Snacks & Biscuits' },
-  { name: 'Soap (Lifebuoy)', price: 35,  unit: 'piece',  category: 'Personal Care' },
-  { name: 'Shampoo Sachet',  price: 5,   unit: 'piece',  category: 'Personal Care' },
-  { name: 'Tea Powder',      price: 120, unit: 'kg',     category: 'Beverages' },
-];
-
-/* =============================================
    UTILITY HELPERS
    ============================================= */
 
@@ -75,23 +55,6 @@ async function loadProducts() {
     if (res.ok) {
       const data = await res.json();
       products = data.map(p => ({ ...p, id: p._id || p.id }));
-    }
-    
-    // Seed default products on first run
-    if (products.length === 0) {
-      showToast('Seeding default products...');
-      for (const p of DEFAULT_PRODUCTS) {
-        await fetch('/api/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(p)
-        });
-      }
-      const res2 = await fetch('/api/products');
-      if (res2.ok) {
-        const data2 = await res2.json();
-        products = data2.map(p => ({ ...p, id: p._id || p.id }));
-      }
     }
   } catch (err) {
     console.error('Failed to load products', err);
@@ -801,6 +764,160 @@ async function downloadBillPDF() {
 }
 
 /* =============================================
+   BULK UPLOAD FROM EXCEL
+   ============================================= */
+
+/** Handle file selected via input or drag-and-drop */
+async function handleExcelUpload(input) {
+  const file = input.files?.[0];
+  if (!file) return;
+  await processExcelFile(file);
+  input.value = ''; // reset so same file can be re-uploaded
+}
+
+/** Process the Excel/CSV file */
+async function processExcelFile(file) {
+  const statusEl = document.getElementById('bulkUploadStatus');
+
+  // Validate file type
+  const validTypes = [
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-excel',
+    'text/csv'
+  ];
+  const validExts = ['.xlsx', '.xls', '.csv'];
+  const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+
+  if (!validTypes.includes(file.type) && !validExts.includes(ext)) {
+    statusEl.innerHTML = '<div class="upload-result error">Invalid file type. Please upload .xlsx, .xls, or .csv</div>';
+    return;
+  }
+
+  statusEl.innerHTML = '<div class="upload-progress"><div class="upload-progress-bar" style="width: 10%"></div></div><p class="muted" style="margin-top:6px;">Reading file...</p>';
+
+  try {
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+
+    // Use the first sheet
+    const sheetName = workbook.SheetNames[0];
+    const sheet = workbook.Sheets[sheetName];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    if (rows.length === 0) {
+      statusEl.innerHTML = '<div class="upload-result error">No data found in the file. Make sure your sheet has rows.</div>';
+      return;
+    }
+
+    // Normalize column names (lowercase + trimmed)
+    const normalizedRows = rows.map(row => {
+      const normalized = {};
+      for (const key of Object.keys(row)) {
+        normalized[key.toLowerCase().trim()] = row[key];
+      }
+      return normalized;
+    });
+
+    // Validate required columns
+    const firstRow = normalizedRows[0];
+    const hasName = 'name' in firstRow;
+    const hasPrice = 'price' in firstRow;
+
+    if (!hasName || !hasPrice) {
+      const missing = [];
+      if (!hasName) missing.push('name');
+      if (!hasPrice) missing.push('price');
+      statusEl.innerHTML = `<div class="upload-result error">Missing required columns: <strong>${missing.join(', ')}</strong>. Your Excel must have columns: name, price, unit, category</div>`;
+      return;
+    }
+
+    // Upload products one by one with progress
+    let successCount = 0;
+    let failCount = 0;
+    const total = normalizedRows.length;
+
+    for (let i = 0; i < normalizedRows.length; i++) {
+      const row = normalizedRows[i];
+      const name = String(row.name || '').trim();
+      const price = parseFloat(row.price);
+      const unit = String(row.unit || 'piece').trim();
+      const category = String(row.category || 'Other').trim();
+
+      if (!name || isNaN(price) || price < 0) {
+        failCount++;
+        continue;
+      }
+
+      try {
+        const res = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, price, unit, category })
+        });
+        if (res.ok) {
+          successCount++;
+        } else {
+          failCount++;
+        }
+      } catch {
+        failCount++;
+      }
+
+      // Update progress bar
+      const progress = Math.round(((i + 1) / total) * 100);
+      statusEl.innerHTML = `<div class="upload-progress"><div class="upload-progress-bar" style="width: ${progress}%"></div></div><p class="muted" style="margin-top:6px;">Uploading ${i + 1} of ${total}...</p>`;
+    }
+
+    // Show final result
+    let resultHTML = `<div class="upload-result success">${successCount} product(s) added successfully!</div>`;
+    if (failCount > 0) {
+      resultHTML += `<div class="upload-result error" style="margin-top:6px;">${failCount} row(s) skipped (missing name or invalid price).</div>`;
+    }
+    statusEl.innerHTML = resultHTML;
+
+    // Reload products
+    await loadProducts();
+    renderProductTable();
+    refreshDashboard();
+    showToast(`Uploaded ${successCount} products from Excel`);
+
+  } catch (err) {
+    console.error('Excel upload error:', err);
+    statusEl.innerHTML = '<div class="upload-result error">Failed to read the file. Please check the format and try again.</div>';
+  }
+}
+
+/** Drag-and-drop setup (runs after DOM is loaded) */
+function initUploadZone() {
+  const zone = document.getElementById('uploadZone');
+  if (!zone) return;
+
+  zone.addEventListener('dragover', e => {
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+
+  zone.addEventListener('dragleave', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+  });
+
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    const file = e.dataTransfer?.files?.[0];
+    if (file) processExcelFile(file);
+  });
+
+  // Click zone to trigger file input
+  zone.addEventListener('click', e => {
+    if (e.target.tagName !== 'LABEL') {
+      document.getElementById('excelFileInput').click();
+    }
+  });
+}
+
+/* =============================================
    INIT
    ============================================= */
 
@@ -812,6 +929,7 @@ async function init() {
   refreshDashboard();
   updateClock();
   setInterval(updateClock, 1000);
+  initUploadZone();
 
   // Set initial bill number badge
   const ctr = localStorage.getItem(LS_BILL_CTR);

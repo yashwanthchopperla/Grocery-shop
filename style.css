@@ -799,6 +799,77 @@ select { cursor: pointer; }
 }
 
 /* =============================================
+   BULK UPLOAD ZONE
+   ============================================= */
+.upload-zone {
+  border: 2px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all var(--transition);
+  background: var(--bg-primary);
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--accent-primary);
+  background: var(--accent-light);
+}
+
+.upload-zone-content p {
+  margin-top: 6px;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.upload-link {
+  color: var(--accent-primary);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.upload-link:hover {
+  color: var(--accent-dark);
+}
+
+.upload-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-secondary);
+  border-radius: 99px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+
+.upload-progress-bar {
+  height: 100%;
+  background: var(--accent-primary);
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+.upload-result {
+  font-size: 0.88rem;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  margin-top: 10px;
+}
+
+.upload-result.success {
+  background: var(--success-light);
+  color: var(--success);
+  font-weight: 600;
+}
+
+.upload-result.error {
+  background: var(--danger-light);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* =============================================
    PRINT STYLES
    ============================================= */
 #printBillArea {

@@ -8,6 +8,8 @@
   <link rel="stylesheet" href="style.css" />
   <!-- jsPDF for PDF download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- SheetJS for Excel file parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -153,6 +155,20 @@
           <button class="btn btn-primary" id="saveProductBtn" onclick="saveProduct()">💾 Save Product</button>
           <button class="btn btn-ghost" id="cancelEditBtn" style="display:none" onclick="cancelEdit()">✖ Cancel</button>
         </div>
+      </div>
+
+      <!-- Bulk Upload from Excel -->
+      <div class="card form-card" id="bulkUploadCard">
+        <h3>📤 Bulk Upload from Excel</h3>
+        <p class="muted" style="margin-bottom:12px;">Upload an Excel file (.xlsx / .xls) with columns: <strong>name</strong>, <strong>price</strong>, <strong>unit</strong>, <strong>category</strong></p>
+        <div class="upload-zone" id="uploadZone">
+          <div class="upload-zone-content">
+            <span style="font-size:2rem;">📁</span>
+            <p>Drag & drop your Excel file here, or <label for="excelFileInput" class="upload-link">browse</label></p>
+            <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleExcelUpload(this)" />
+          </div>
+        </div>
+        <div id="bulkUploadStatus" style="margin-top:10px;"></div>
       </div>
 
       <!-- Search bar -->
