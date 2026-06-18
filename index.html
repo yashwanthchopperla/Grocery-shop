@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,6 +9,7 @@
   <!-- jsPDF for PDF download -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
+
 <body>
 
   <!-- ===== TOP NAV ===== -->
@@ -15,7 +17,7 @@
     <div class="topbar-left">
       <span class="shop-logo">🛒</span>
       <div>
-        <h1 class="shop-name" id="shopNameDisplay">Sri Lakshmi Kirana Store</h1>
+        <h1 class="shop-name" id="shopNameDisplay">Grocery Store</h1>
         <p class="shop-tagline">Fresh · Fast · Trusted</p>
       </div>
     </div>
@@ -173,7 +175,9 @@
             </tr>
           </thead>
           <tbody id="productTableBody">
-            <tr><td colspan="6" class="empty-msg">No products added yet.</td></tr>
+            <tr>
+              <td colspan="6" class="empty-msg">No products added yet.</td>
+            </tr>
           </tbody>
         </table>
       </div>
@@ -207,7 +211,8 @@
           <div class="form-group" style="flex:2">
             <label for="billProductSelect">Select Product</label>
             <div class="combo-wrapper">
-              <input type="text" id="billProductSearch" placeholder="Search or type product…" autocomplete="off" oninput="filterBillDropdown()" onfocus="showDropdown()" />
+              <input type="text" id="billProductSearch" placeholder="Search or type product…" autocomplete="off"
+                oninput="filterBillDropdown()" onfocus="showDropdown()" />
               <div class="dropdown-list" id="billDropdown"></div>
             </div>
             <!-- hidden to store selection -->
@@ -256,7 +261,8 @@
           <div class="totals-row discount-row">
             <span>Discount</span>
             <div class="discount-input-wrap">
-              <input type="number" id="discountAmount" placeholder="0" min="0" step="0.5" value="0" oninput="recalcTotal()" />
+              <input type="number" id="discountAmount" placeholder="0" min="0" step="0.5" value="0"
+                oninput="recalcTotal()" />
               <span>₹</span>
             </div>
           </div>
@@ -296,4 +302,5 @@
 
   <script src="script.js"></script>
 </body>
+
 </html>
